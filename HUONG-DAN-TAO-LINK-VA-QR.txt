@@ -1,0 +1,22 @@
+CẤU TRÚC REPOSITORY
+
+index.html
+.nojekyll
+bai-du-lich-the-gioi-2025/
+  index.html
+bai-1-khai-niem-to-chuc-thi-truong-du-lich/
+  index.html
+  DAP-AN-GIANG-VIEN.txt
+
+LINK SAU KHI XUẤT BẢN GITHUB PAGES
+
+Trang danh mục:
+https://TEN-TAI-KHOAN.github.io/TEN-REPOSITORY/
+
+Mini game 01:
+https://TEN-TAI-KHOAN.github.io/TEN-REPOSITORY/bai-du-lich-the-gioi-2025/
+
+Mini game 02:
+https://TEN-TAI-KHOAN.github.io/TEN-REPOSITORY/bai-1-khai-niem-to-chuc-thi-truong-du-lich/
+
+Tạo một mã QR riêng cho từng link mini game. Không dùng link trang danh mục nếu muốn sinh viên vào thẳng trò chơi.
