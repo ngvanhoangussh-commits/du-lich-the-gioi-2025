@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#071b33" />
+  <title>Giải mã Bản đồ Du lịch Thế giới</title>
+  <style>
+    :root {
+      --navy: #071b33;
+      --navy-2: #0b2c52;
+      --cyan: #35d0ba;
+      --gold: #ffd166;
+      --white: #f7fbff;
+      --muted: #b9c9da;
+      --danger: #ff6b6b;
+      --success: #4ade80;
+      --panel: rgba(7, 27, 51, 0.82);
+      --border: rgba(255,255,255,0.14);
+      --shadow: 0 18px 50px rgba(0,0,0,0.28);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--white);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(53,208,186,.25), transparent 35%),
+        radial-gradient(circle at 85% 10%, rgba(255,209,102,.18), transparent 30%),
+        linear-gradient(145deg, #04101f 0%, #082a4d 52%, #07182c 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .32;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+
+    .app {
+      width: min(1080px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 18px 0 42px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 4px 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .brand-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 23px;
+      background: linear-gradient(135deg, var(--cyan), #1987c8);
+      box-shadow: 0 10px 25px rgba(53,208,186,.25);
+    }
+
+    .source-chip {
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,.04);
+      white-space: nowrap;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeIn .35s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      min-height: 78vh;
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .hero-copy h1 {
+      margin: 0 0 14px;
+      font-size: clamp(42px, 7vw, 80px);
+      line-height: .95;
+      letter-spacing: -.045em;
+      max-width: 780px;
+    }
+
+    .hero-copy h1 span {
+      display: block;
+      color: var(--gold);
+      text-shadow: 0 10px 36px rgba(255,209,102,.25);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid rgba(53,208,186,.35);
+      background: rgba(53,208,186,.09);
+      color: #9ff3e6;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .hero-copy p {
+      color: #d6e3ef;
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.6;
+      max-width: 760px;
+      margin: 0 0 22px;
+    }
+
+    .feature-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0 26px;
+    }
+
+    .feature {
+      padding: 10px 13px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.045);
+      color: #dce8f3;
+      font-size: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .start-card { padding: 24px; }
+    .start-card h2 { margin: 0 0 8px; font-size: 26px; }
+    .start-card p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
+
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: #c7d6e5;
+      margin-bottom: 7px;
+      font-weight: 700;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: white;
+      padding: 14px 14px;
+      border-radius: 14px;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .field input:focus, .field select:focus {
+      border-color: rgba(53,208,186,.8);
+      box-shadow: 0 0 0 4px rgba(53,208,186,.12);
+    }
+
+    select option { color: #111; }
+
+    .btn {
+      border: 0;
+      border-radius: 15px;
+      padding: 14px 18px;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+    }
+
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      width: 100%;
+      color: #061423;
+      background: linear-gradient(135deg, var(--gold), #ffb14a);
+      box-shadow: 0 10px 24px rgba(255,177,74,.25);
+    }
+
+    .btn-secondary {
+      color: white;
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+    }
+
+    .btn-success {
+      color: #051a11;
+      background: linear-gradient(135deg, #7af0a4, #4ade80);
+    }
+
+    .mini-note {
+      font-size: 12px;
+      color: #9fb1c4;
+      line-height: 1.5;
+      margin-top: 14px;
+    }
+
+    .game-shell { max-width: 900px; margin: 0 auto; }
+
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .hud-box {
+      min-height: 58px;
+      padding: 10px 15px;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background: rgba(4,16,31,.62);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hud-label { color: var(--muted); font-size: 12px; }
+    .hud-value { font-weight: 900; font-size: 19px; }
+    .timer.danger { color: var(--danger); animation: pulse .65s infinite alternate; }
+
+    @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+
+    .progress-wrap {
+      height: 9px;
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
+      transition: width .35s ease;
+    }
+
+    .question-card { padding: clamp(20px, 4vw, 34px); }
+
+    .question-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .round-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #a8f5e9;
+      background: rgba(53,208,186,.1);
+      border: 1px solid rgba(53,208,186,.25);
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .streak-chip {
+      color: #ffe8a7;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .question-title {
+      font-size: clamp(24px, 4vw, 38px);
+      line-height: 1.22;
+      margin: 0 0 24px;
+      letter-spacing: -.02em;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .answer-btn {
+      min-height: 80px;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background: rgba(255,255,255,.055);
+      color: white;
+      padding: 16px;
+      text-align: left;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      transition: .2s ease;
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      border-color: rgba(53,208,186,.55);
+      transform: translateY(-2px);
+      background: rgba(53,208,186,.08);
+    }
+
+    .answer-btn:disabled { cursor: default; }
+    .answer-btn.correct { background: rgba(74,222,128,.16); border-color: rgba(74,222,128,.8); }
+    .answer-btn.wrong { background: rgba(255,107,107,.15); border-color: rgba(255,107,107,.78); }
+
+    .letter {
+      flex: 0 0 35px;
+      width: 35px;
+      height: 35px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: rgba(255,255,255,.1);
+      font-weight: 900;
+    }
+
+    .feedback {
+      display: none;
+      margin-top: 18px;
+      padding: 16px 17px;
+      border-radius: 16px;
+      line-height: 1.55;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+    }
+
+    .feedback.show { display: block; animation: fadeIn .25s ease; }
+    .feedback strong { display: block; font-size: 18px; margin-bottom: 4px; }
+    .feedback.good strong { color: var(--success); }
+    .feedback.bad strong { color: var(--danger); }
+
+    .next-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .next-row .btn { min-width: 180px; }
+
+    .order-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .order-item {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-height: 58px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .order-item.dragging { opacity: .55; border-color: var(--gold); }
+    .drag-icon { color: var(--muted); letter-spacing: -2px; }
+    .rank-no {
+      width: 31px;
+      height: 31px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(255,209,102,.15);
+      color: var(--gold);
+      font-weight: 900;
+    }
+
+    .order-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+    .result-wrap { max-width: 900px; margin: 0 auto; }
+    .result-card { padding: clamp(24px, 5vw, 44px); text-align: center; }
+
+    .result-icon {
+      width: 104px;
+      height: 104px;
+      border-radius: 30px;
+      display: grid;
+      place-items: center;
+      font-size: 52px;
+      margin: 0 auto 18px;
+      background: linear-gradient(135deg, rgba(255,209,102,.28), rgba(53,208,186,.2));
+      border: 1px solid rgba(255,255,255,.18);
+    }
+
+    .result-card h2 { margin: 0; font-size: clamp(32px, 5vw, 52px); }
+    .rank-title { color: var(--gold); font-weight: 900; font-size: 21px; margin: 8px 0 22px; }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .score-box {
+      border-radius: 17px;
+      padding: 15px 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+    }
+
+    .score-box .n { font-size: 27px; font-weight: 900; }
+    .score-box .l { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    .result-message { color: #d9e6f1; line-height: 1.6; max-width: 650px; margin: 0 auto 22px; }
+
+    .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+    .review {
+      text-align: left;
+      margin-top: 26px;
+      display: none;
+    }
+
+    .review.show { display: block; }
+    .review-item {
+      padding: 15px;
+      border-radius: 15px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .review-item h4 { margin: 0 0 7px; font-size: 15px; }
+    .review-item p { margin: 4px 0; color: #cbd8e4; font-size: 14px; line-height: 1.45; }
+
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      padding: 12px 17px;
+      border-radius: 12px;
+      background: #07111f;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: .25s ease;
+      z-index: 20;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    footer {
+      text-align: center;
+      color: #8fa2b5;
+      font-size: 12px;
+      line-height: 1.55;
+      margin-top: 25px;
+      padding: 0 10px;
+    }
+
+    @media (max-width: 780px) {
+      .hero { grid-template-columns: 1fr; padding: 20px 0 34px; }
+      .hero-copy { text-align: center; }
+      .hero-copy p { margin-left: auto; margin-right: auto; }
+      .feature-row { justify-content: center; }
+      .source-chip { display: none; }
+      .answers { grid-template-columns: 1fr; }
+      .hud { grid-template-columns: 1fr 1fr; }
+      .hud .player-box { grid-column: 1 / -1; }
+      .score-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 470px) {
+      .app { width: min(100% - 18px, 1080px); }
+      .topbar { padding-bottom: 8px; }
+      .brand span:last-child { font-size: 14px; }
+      .question-card { border-radius: 20px; }
+      .hud-box { padding: 8px 10px; }
+      .question-title { font-size: 25px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-badge">🌍</div>
+        <span>TOURISM KNOWLEDGE QUEST</span>
+      </div>
+      <div class="source-chip">Bài 1 · Khái niệm · Tổ chức · Thị trường</div>
+    </div>
+
+    <section id="startScreen" class="screen active">
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">🧭 MINI GAME BÀI 1 · ĐỊA LÝ DU LỊCH THẾ GIỚI</div>
+          <h1>GIẢI MÃ <span>BẢN ĐỒ DU LỊCH</span></h1>
+          <p>Nhận diện đúng khái niệm, chọn đúng tổ chức và đọc chính xác các chỉ báo cơ bản của thị trường du lịch thế giới.</p>
+          <div class="feature-row">
+            <div class="feature">⏱ 12–15 phút</div>
+            <div class="feature">🎯 Chế độ lớp học: mọi nhóm cùng bộ đề</div>
+            <div class="feature">📱 Chơi trên điện thoại hoặc máy tính</div>
+            <div class="feature">🏆 Điểm tốc độ, chuỗi đúng và xếp hạng</div>
+          </div>
+        </div>
+
+        <div class="card start-card">
+          <h2>Thông tin người chơi</h2>
+          <p>Điền tên cá nhân hoặc tên đội. Kết quả có thể sao chép để nộp cho giảng viên.</p>
+          <div class="field">
+            <label for="playerName">Tên sinh viên / tên đội</label>
+            <input id="playerName" maxlength="40" placeholder="Ví dụ: Nhóm Passport" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="classCode">Lớp / mã lớp (không bắt buộc)</label>
+            <input id="classCode" maxlength="30" placeholder="Ví dụ: DLDL-K46" />
+          </div>
+          <div class="field">
+            <label for="modeSelect">Chế độ</label>
+            <select id="modeSelect">
+              <option value="class" selected>Thi theo lớp · 25 giây/câu · cùng bộ đề</option>
+              <option value="normal">Tiêu chuẩn · 25 giây/câu · ngẫu nhiên</option>
+              <option value="relaxed">Ôn tập · 40 giây/câu · ngẫu nhiên</option>
+              <option value="speed">Tốc độ · 15 giây/câu · ngẫu nhiên</option>
+            </select>
+          </div>
+          <button id="startBtn" class="btn btn-primary">BẮT ĐẦU GIẢI MÃ →</button>
+          <div class="mini-note">Mẹo: khi thi trên lớp, tất cả nhóm chọn “Thi theo lớp” và chỉ bấm Bắt đầu sau hiệu lệnh của giảng viên. Trò chơi hoạt động độc lập, không cần đăng nhập.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="game-shell">
+        <div class="hud">
+          <div class="hud-box player-box">
+            <div>🧳</div>
+            <div><div class="hud-label">Người chơi</div><div id="hudPlayer" class="hud-value">—</div></div>
+          </div>
+          <div class="hud-box">
+            <div>⭐</div>
+            <div><div class="hud-label">Điểm</div><div id="scoreDisplay" class="hud-value">0</div></div>
+          </div>
+          <div class="hud-box">
+            <div>⏱</div>
+            <div><div class="hud-label">Thời gian</div><div id="timerDisplay" class="hud-value timer">25</div></div>
+          </div>
+        </div>
+        <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
+
+        <div class="card question-card">
+          <div class="question-meta">
+            <div id="roundChip" class="round-chip">🌐 Cất cánh</div>
+            <div id="streakChip" class="streak-chip">🔥 Chuỗi đúng: 0</div>
+          </div>
+          <h2 id="questionTitle" class="question-title">Câu hỏi</h2>
+          <div id="answerArea" class="answers"></div>
+          <div id="feedback" class="feedback"></div>
+          <div class="next-row">
+            <button id="nextBtn" class="btn btn-success" style="display:none">CÂU TIẾP THEO →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="screen">
+      <div class="result-wrap">
+        <div class="card result-card">
+          <div id="resultIcon" class="result-icon">🏆</div>
+          <h2 id="resultHeading">Hoàn thành bản đồ kiến thức!</h2>
+          <div id="rankTitle" class="rank-title">Chuyên gia bản đồ du lịch</div>
+          <div class="score-grid">
+            <div class="score-box"><div id="finalScore" class="n">0</div><div class="l">TỔNG ĐIỂM</div></div>
+            <div class="score-box"><div id="correctCount" class="n">0/13</div><div class="l">CÂU ĐÚNG</div></div>
+            <div class="score-box"><div id="bestStreak" class="n">0</div><div class="l">CHUỖI ĐÚNG CAO NHẤT</div></div>
+          </div>
+          <p id="resultMessage" class="result-message"></p>
+          <div class="result-actions">
+            <button id="copyBtn" class="btn btn-success">📋 Sao chép kết quả</button>
+            <button id="reviewBtn" class="btn btn-secondary">📚 Xem đáp án</button>
+            <button id="restartBtn" class="btn btn-secondary">↻ Chơi lại</button>
+          </div>
+          <div id="reviewPanel" class="review"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Nguồn nội dung: bài giảng <em>Khái niệm, các tổ chức du lịch trên thế giới và thị trường du lịch</em>; số liệu thị trường trong game sử dụng các biểu đồ năm 2019 của bài giảng.<br />
+      Bộ câu hỏi được biên soạn lại phục vụ mục đích giảng dạy và ôn tập phi thương mại.
+    </footer>
+  </div>
+
+  <div id="toast" class="toast">Đã sao chép kết quả!</div>
+
+  <script>
+    const questions = [
+          {
+                "round": "🧭 Trạm 1 · Khái niệm",
+                "q": "Theo Luật Du lịch 2017 trong bài giảng, một chuyến đi được xem là hoạt động du lịch khi diễn ra ngoài nơi cư trú thường xuyên trong thời gian tối đa bao lâu?",
+                "options": [
+                      "Không quá 30 ngày",
+                      "Không quá 6 tháng",
+                      "Không quá 1 năm liên tục",
+                      "Không giới hạn thời gian"
+                ],
+                "answer": "Không quá 1 năm liên tục",
+                "explain": "Khái niệm trong bài giảng xác định chuyến đi ngoài nơi cư trú thường xuyên không kéo dài quá 1 năm liên tục."
+          },
+          {
+                "round": "🧭 Trạm 1 · Khái niệm",
+                "q": "Trường hợp nào sau đây KHÔNG được xếp là khách du lịch theo nội dung bài giảng?",
+                "options": [
+                      "Đi nghỉ dưỡng",
+                      "Đi tham quan di sản",
+                      "Đến nơi khác làm việc để nhận thu nhập",
+                      "Đi khám phá tài nguyên du lịch"
+                ],
+                "answer": "Đến nơi khác làm việc để nhận thu nhập",
+                "explain": "Người đi học hoặc làm việc để nhận thu nhập tại nơi đến không được xếp là khách du lịch theo định nghĩa trong bài."
+          },
+          {
+                "round": "🧭 Trạm 1 · Khái niệm",
+                "q": "Một người nước ngoài đang cư trú hợp pháp tại Việt Nam đi nghỉ ở Đà Nẵng được xếp vào nhóm nào?",
+                "options": [
+                      "Khách du lịch nội địa",
+                      "Khách quốc tế đến Việt Nam",
+                      "Khách du lịch ra nước ngoài",
+                      "Khách quá cảnh"
+                ],
+                "answer": "Khách du lịch nội địa",
+                "explain": "Khách du lịch nội địa gồm công dân Việt Nam và người nước ngoài cư trú tại Việt Nam đi du lịch trong lãnh thổ Việt Nam."
+          },
+          {
+                "round": "🧭 Trạm 1 · Khái niệm",
+                "q": "Một du khách Hàn Quốc nhập cảnh Việt Nam để tham quan thuộc loại hình nào xét từ góc độ Việt Nam?",
+                "options": [
+                      "Domestic tourism",
+                      "Inbound tourism",
+                      "Outbound tourism",
+                      "Transit tourism"
+                ],
+                "answer": "Inbound tourism",
+                "explain": "Inbound tourism là du lịch quốc tế đến: người từ nước ngoài vào một quốc gia để du lịch."
+          },
+          {
+                "round": "🧭 Trạm 1 · Khái niệm",
+                "q": "Một công dân Việt Nam đi du lịch Thái Lan thuộc loại hình nào xét từ góc độ Việt Nam?",
+                "options": [
+                      "Inbound tourism",
+                      "Domestic tourism",
+                      "Outbound tourism",
+                      "Excursion tourism"
+                ],
+                "answer": "Outbound tourism",
+                "explain": "Outbound tourism là du lịch ra nước ngoài của công dân hoặc người cư trú tại quốc gia xuất phát."
+          },
+          {
+                "round": "🧩 Trạm 2 · Không gian du lịch",
+                "q": "Mục tiêu cốt lõi của tổ chức lãnh thổ du lịch là gì?",
+                "options": [
+                      "Chia lãnh thổ theo ranh giới hành chính",
+                      "Phân chia thành các vùng kinh tế du lịch để phát huy lợi thế và nâng cao hiệu quả",
+                      "Chỉ tập trung xây dựng khách sạn",
+                      "Loại bỏ các vùng ít tài nguyên"
+                ],
+                "answer": "Phân chia thành các vùng kinh tế du lịch để phát huy lợi thế và nâng cao hiệu quả",
+                "explain": "Tổ chức lãnh thổ du lịch nhằm phát huy lợi thế và tổ chức hoạt động du lịch đạt hiệu quả kinh tế, xã hội và môi trường cao."
+          },
+          {
+                "round": "🧩 Trạm 2 · Không gian du lịch",
+                "q": "Phát biểu nào đúng về ranh giới của vùng du lịch?",
+                "options": [
+                      "Luôn trùng với ranh giới hành chính",
+                      "Luôn trùng với vùng tự nhiên",
+                      "Không nhất thiết trùng với phân vùng tự nhiên, văn hóa hoặc kinh tế – xã hội",
+                      "Chỉ được xác định theo khí hậu"
+                ],
+                "answer": "Không nhất thiết trùng với phân vùng tự nhiên, văn hóa hoặc kinh tế – xã hội",
+                "explain": "Vùng du lịch có nguyên tắc và tiêu chuẩn phân vùng riêng nên ranh giới thường không hoàn toàn trùng với các cách phân vùng khác."
+          },
+          {
+                "round": "🏛️ Trạm 3 · Tổ chức toàn cầu",
+                "q": "Từ năm 2024, World Tourism Organization sử dụng tên nhận diện mới nào?",
+                "options": [
+                      "UN Travel",
+                      "UN Tourism",
+                      "World Travel Union",
+                      "Global Tourism Council"
+                ],
+                "answer": "UN Tourism",
+                "explain": "Bài giảng ghi nhận tên mới của UNWTO từ năm 2024 là UN Tourism – Tổ chức Du lịch Liên Hợp Quốc."
+          },
+          {
+                "round": "🏛️ Trạm 3 · Tổ chức toàn cầu",
+                "q": "Trụ sở chính của UN Tourism được đặt tại thành phố nào?",
+                "options": [
+                      "Paris",
+                      "Geneva",
+                      "Madrid",
+                      "Brussels"
+                ],
+                "answer": "Madrid",
+                "explain": "UN Tourism đặt trụ sở chính tại Madrid, Tây Ban Nha."
+          },
+          {
+                "round": "🏛️ Trạm 3 · Tổ chức toàn cầu",
+                "q": "Tổ chức nào là liên minh toàn cầu quy tụ lãnh đạo cấp cao của các doanh nghiệp du lịch và lữ hành?",
+                "options": [
+                      "WTTC",
+                      "UNESCO",
+                      "IATA",
+                      "ETC"
+                ],
+                "answer": "WTTC",
+                "explain": "WTTC đại diện tiếng nói của khu vực doanh nghiệp du lịch và lữ hành, làm việc với chính phủ về tăng trưởng và việc làm."
+          },
+          {
+                "round": "✈️ Trạm 4 · Hàng không & di sản",
+                "q": "Tổ chức nào có sứ mệnh “đại diện, phục vụ và lãnh đạo ngành hàng không”?",
+                "options": [
+                      "PATA",
+                      "IATA",
+                      "ASEANTA",
+                      "UN Tourism"
+                ],
+                "answer": "IATA",
+                "explain": "IATA là Hiệp hội Vận tải Hàng không Quốc tế, tập trung vào hoạt động và an toàn của mạng lưới hàng không toàn cầu."
+          },
+          {
+                "round": "✈️ Trạm 4 · Hàng không & di sản",
+                "q": "IATA được thành lập năm 1945 tại đâu?",
+                "options": [
+                      "Havana, Cuba",
+                      "Madrid, Tây Ban Nha",
+                      "Paris, Pháp",
+                      "Brussels, Bỉ"
+                ],
+                "answer": "Havana, Cuba",
+                "explain": "Theo bài giảng, IATA được thành lập năm 1945 tại Havana, Cuba."
+          },
+          {
+                "round": "✈️ Trạm 4 · Hàng không & di sản",
+                "q": "Tổ chức nào duy trì các danh sách như Di sản thế giới, Khu dự trữ sinh quyển và Công viên địa chất toàn cầu?",
+                "options": [
+                      "UNESCO",
+                      "WTTC",
+                      "PATA",
+                      "IHA"
+                ],
+                "answer": "UNESCO",
+                "explain": "UNESCO thúc đẩy hợp tác giáo dục, khoa học và văn hóa; các danh hiệu của tổ chức tạo nguồn lực quan trọng cho phát triển du lịch."
+          },
+          {
+                "round": "🌏 Trạm 5 · Hiệp hội khu vực",
+                "q": "Hiệp hội nào tập trung thúc đẩy phát triển du lịch có trách nhiệm tại khu vực châu Á – Thái Bình Dương?",
+                "options": [
+                      "ETC",
+                      "PATA",
+                      "ASEANTA",
+                      "IH&RA"
+                ],
+                "answer": "PATA",
+                "explain": "PATA là Pacific Asia Travel Association, hỗ trợ phát triển sản phẩm, xúc tiến và phát triển du lịch có trách nhiệm trong khu vực."
+          },
+          {
+                "round": "🌏 Trạm 5 · Hiệp hội khu vực",
+                "q": "ASEANTA là hiệp hội du lịch của khu vực nào?",
+                "options": [
+                      "Đông Nam Á",
+                      "Nam Á",
+                      "Châu Âu",
+                      "Trung Đông"
+                ],
+                "answer": "Đông Nam Á",
+                "explain": "ASEANTA là ASEAN Tourism Association, liên kết các tổ chức du lịch công và tư tại Đông Nam Á."
+          },
+          {
+                "round": "🌏 Trạm 5 · Hiệp hội khu vực",
+                "q": "Tổ chức nào là liên minh hợp tác giữa các cơ quan du lịch quốc gia châu Âu?",
+                "options": [
+                      "ETC",
+                      "IATA",
+                      "PATA",
+                      "WTTC"
+                ],
+                "answer": "ETC",
+                "explain": "ETC – European Travel Commission – thúc đẩy hợp tác, nghiên cứu và xúc tiến du lịch đến châu Âu."
+          },
+          {
+                "round": "📊 Trạm 6 · Thị trường 2019",
+                "q": "Theo biểu đồ trong bài giảng, mục đích nào chiếm tỷ trọng lớn nhất của khách du lịch quốc tế đến năm 2019?",
+                "options": [
+                      "Kinh doanh và nghề nghiệp",
+                      "Nghỉ dưỡng, giải trí và kỳ nghỉ",
+                      "Thăm thân, sức khỏe, tôn giáo và mục đích khác",
+                      "Không xác định"
+                ],
+                "answer": "Nghỉ dưỡng, giải trí và kỳ nghỉ",
+                "explain": "Nhóm nghỉ dưỡng, giải trí và kỳ nghỉ chiếm 55%, lớn nhất trong cơ cấu mục đích chuyến đi năm 2019."
+          },
+          {
+                "round": "📊 Trạm 6 · Thị trường 2019",
+                "q": "Theo biểu đồ năm 2019, phương thức vận chuyển nào chiếm tỷ trọng lớn nhất trong du lịch quốc tế đến?",
+                "options": [
+                      "Đường bộ",
+                      "Đường hàng không",
+                      "Đường thủy",
+                      "Đường sắt"
+                ],
+                "answer": "Đường hàng không",
+                "explain": "Hàng không chiếm 59%, cao hơn đường bộ 35%, đường thủy 5% và đường sắt 1%."
+          },
+          {
+                "round": "📊 Trạm 6 · Thị trường 2019",
+                "q": "Khu vực nào chiếm tỷ trọng lớn nhất về lượng khách du lịch quốc tế đến năm 2019?",
+                "options": [
+                      "Châu Á và Thái Bình Dương",
+                      "Châu Mỹ",
+                      "Châu Âu",
+                      "Trung Đông"
+                ],
+                "answer": "Châu Âu",
+                "explain": "Châu Âu chiếm 51% lượng khách quốc tế đến năm 2019, đứng đầu các khu vực."
+          },
+          {
+                "round": "📊 Trạm 6 · Thị trường 2019",
+                "q": "Năm 2019, khu vực nào tạo ra tỷ trọng khách du lịch ra nước ngoài lớn nhất?",
+                "options": [
+                      "Châu Âu",
+                      "Châu Á và Thái Bình Dương",
+                      "Châu Mỹ",
+                      "Châu Phi"
+                ],
+                "answer": "Châu Âu",
+                "explain": "Châu Âu chiếm 48% nguồn khách du lịch ra nước ngoài, lớn nhất trong các khu vực."
+          },
+          {
+                "round": "🔍 Trạm 7 · Vận dụng",
+                "q": "Một điểm đến muốn phát triển sản phẩm gắn với danh hiệu Công viên địa chất toàn cầu nên ưu tiên phối hợp với tổ chức nào?",
+                "options": [
+                      "UNESCO",
+                      "WTTC",
+                      "IATA",
+                      "ASEANTA"
+                ],
+                "answer": "UNESCO",
+                "explain": "Công viên địa chất toàn cầu là một trong các chương trình, danh hiệu quốc tế do UNESCO duy trì."
+          },
+          {
+                "round": "🔍 Trạm 7 · Vận dụng",
+                "q": "Một hãng hàng không cần tham gia xây dựng tiêu chuẩn vận tải và an toàn quốc tế nên làm việc với tổ chức nào?",
+                "options": [
+                      "IATA",
+                      "ETC",
+                      "PATA",
+                      "UNESCO"
+                ],
+                "answer": "IATA",
+                "explain": "IATA đại diện và phục vụ ngành hàng không, đồng thời thúc đẩy an toàn và hiệu quả vận chuyển hành khách, hàng hóa."
+          }
+    ];
+
+    const classQuestionIndexes = [0, 1, 2, 3, 5, 7, 9, 10, 12, 13, 16, 17];
+    const classOrderStart = [
+      "Châu Mỹ — 15%",
+      "Châu Âu — 51%",
+      "Châu Phi — 5%",
+      "Châu Á và Thái Bình Dương — 25%",
+      "Trung Đông — 4%"
+    ];
+
+    const orderChallenge = {
+      round: "🏁 Thử thách cuối",
+      q: "Sắp xếp các khu vực theo tỷ trọng khách du lịch quốc tế đến năm 2019, từ CAO xuống THẤP.",
+      correct: ["Châu Âu — 51%", "Châu Á và Thái Bình Dương — 25%", "Châu Mỹ — 15%", "Châu Phi — 5%", "Trung Đông — 4%"],
+      explain: "Thứ tự đúng: Châu Âu 51%, Châu Á và Thái Bình Dương 25%, Châu Mỹ 15%, Châu Phi 5%, Trung Đông 4%."
+    };
+
+    const state = {
+      player: "",
+      classCode: "",
+      mode: "normal",
+      selected: [],
+      index: 0,
+      score: 0,
+      correct: 0,
+      streak: 0,
+      bestStreak: 0,
+      timeLeft: 25,
+      timer: null,
+      locked: false,
+      answers: [],
+      orderAnswered: false,
+      orderCorrect: false
+    };
+
+    const $ = id => document.getElementById(id);
+    const screens = ["startScreen", "gameScreen", "resultScreen"];
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function showScreen(id) {
+      screens.forEach(s => $(s).classList.toggle("active", s === id));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function baseTime() {
+      return state.mode === "speed" ? 15 : state.mode === "relaxed" ? 40 : 25;
+    }
+
+    function beep(freq = 540, duration = 0.08) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function startGame() {
+      const name = $("playerName").value.trim();
+      if (!name) {
+        $("playerName").focus();
+        $("playerName").style.borderColor = "#ff6b6b";
+        setTimeout(() => $("playerName").style.borderColor = "", 1200);
+        return;
+      }
+      state.player = name;
+      state.classCode = $("classCode").value.trim();
+      state.mode = $("modeSelect").value;
+      state.selected = state.mode === "class"
+        ? classQuestionIndexes.map(i => questions[i])
+        : shuffle(questions).slice(0, 12);
+      state.index = 0;
+      state.score = 0;
+      state.correct = 0;
+      state.streak = 0;
+      state.bestStreak = 0;
+      state.answers = [];
+      state.orderAnswered = false;
+      state.orderCorrect = false;
+      $("hudPlayer").textContent = state.player;
+      $("scoreDisplay").textContent = "0";
+      showScreen("gameScreen");
+      renderQuestion();
+    }
+
+    function updateHUD() {
+      $("scoreDisplay").textContent = state.score.toLocaleString("vi-VN");
+      $("streakChip").textContent = `🔥 Chuỗi đúng: ${state.streak}`;
+      const totalSteps = state.selected.length + 1;
+      const progress = Math.min(100, (state.index / totalSteps) * 100);
+      $("progressBar").style.width = `${progress}%`;
+    }
+
+    function startTimer(seconds = baseTime()) {
+      clearInterval(state.timer);
+      state.timeLeft = seconds;
+      const el = $("timerDisplay");
+      el.textContent = state.timeLeft;
+      el.classList.remove("danger");
+      state.timer = setInterval(() => {
+        state.timeLeft--;
+        el.textContent = state.timeLeft;
+        if (state.timeLeft <= 5) el.classList.add("danger");
+        if (state.timeLeft <= 0) {
+          clearInterval(state.timer);
+          if (state.index < state.selected.length) handleTimeout();
+          else if (!state.orderAnswered) submitOrder(true);
+        }
+      }, 1000);
+    }
+
+    function renderQuestion() {
+      document.querySelectorAll(".order-actions").forEach(el => el.remove());
+      state.locked = false;
+      $("feedback").className = "feedback";
+      $("feedback").innerHTML = "";
+      $("nextBtn").style.display = "none";
+      updateHUD();
+
+      if (state.index >= state.selected.length) {
+        renderOrderChallenge();
+        return;
+      }
+
+      const item = state.selected[state.index];
+      $("roundChip").textContent = item.round;
+      $("questionTitle").textContent = `Câu ${state.index + 1}/12: ${item.q}`;
+      const options = state.mode === "class" ? [...item.options] : shuffle(item.options);
+      const area = $("answerArea");
+      area.className = "answers";
+      area.innerHTML = "";
+      options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "answer-btn";
+        btn.innerHTML = `<span class="letter">${String.fromCharCode(65 + idx)}</span><span>${opt}</span>`;
+        btn.addEventListener("click", () => chooseAnswer(btn, opt, item));
+        area.appendChild(btn);
+      });
+      startTimer();
+    }
+
+    function chooseAnswer(button, selected, item) {
+      if (state.locked) return;
+      state.locked = true;
+      clearInterval(state.timer);
+      const isCorrect = selected === item.answer;
+      const buttons = [...document.querySelectorAll(".answer-btn")];
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        const text = btn.querySelector("span:last-child").textContent;
+        if (text === item.answer) btn.classList.add("correct");
+      });
+      if (!isCorrect) button.classList.add("wrong");
+
+      let earned = 0;
+      if (isCorrect) {
+        state.correct++;
+        state.streak++;
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+        earned = 700 + Math.max(0, state.timeLeft) * 15 + Math.min(state.streak, 5) * 40;
+        state.score += earned;
+        beep(740, .11);
+      } else {
+        state.streak = 0;
+        beep(220, .16);
+      }
+
+      state.answers.push({ q: item.q, selected, correct: item.answer, isCorrect, explain: item.explain });
+      updateHUD();
+      showFeedback(isCorrect, item, earned, selected);
+    }
+
+    function handleTimeout() {
+      if (state.locked) return;
+      state.locked = true;
+      state.streak = 0;
+      const item = state.selected[state.index];
+      const buttons = [...document.querySelectorAll(".answer-btn")];
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        const text = btn.querySelector("span:last-child").textContent;
+        if (text === item.answer) btn.classList.add("correct");
+      });
+      state.answers.push({ q: item.q, selected: "Hết thời gian", correct: item.answer, isCorrect: false, explain: item.explain });
+      updateHUD();
+      showFeedback(false, item, 0, "Hết thời gian");
+      beep(180, .2);
+    }
+
+    function showFeedback(isCorrect, item, earned, selected) {
+      const fb = $("feedback");
+      fb.className = `feedback show ${isCorrect ? "good" : "bad"}`;
+      fb.innerHTML = isCorrect
+        ? `<strong>Chính xác! +${earned.toLocaleString("vi-VN")} điểm</strong>${item.explain}`
+        : `<strong>Chưa đúng — đáp án: ${item.answer}</strong>${item.explain}`;
+      $("nextBtn").style.display = "inline-flex";
+      $("nextBtn").textContent = state.index === state.selected.length - 1 ? "THỬ THÁCH CUỐI →" : "CÂU TIẾP THEO →";
+    }
+
+    function renderOrderChallenge() {
+      $("progressBar").style.width = `${(12/13)*100}%`;
+      $("roundChip").textContent = orderChallenge.round;
+      $("questionTitle").textContent = orderChallenge.q;
+      $("feedback").className = "feedback";
+      $("nextBtn").style.display = "none";
+      const area = $("answerArea");
+      area.className = "order-list";
+      area.innerHTML = "";
+      (state.mode === "class" ? classOrderStart : shuffle(orderChallenge.correct)).forEach((text, idx) => {
+        const item = document.createElement("div");
+        item.className = "order-item";
+        item.draggable = true;
+        item.dataset.value = text;
+        item.innerHTML = `<span class="rank-no">${idx + 1}</span><span class="drag-icon">⠿</span><strong>${text}</strong>`;
+        area.appendChild(item);
+      });
+      setupSortable(area);
+      const actions = document.createElement("div");
+      actions.className = "order-actions";
+      actions.innerHTML = `<button id="submitOrderBtn" class="btn btn-success">KIỂM TRA THỨ TỰ</button>`;
+      area.insertAdjacentElement("afterend", actions);
+      $("submitOrderBtn").addEventListener("click", () => submitOrder(false));
+      startTimer(state.mode === "speed" ? 30 : state.mode === "relaxed" ? 60 : 45);
+    }
+
+    function refreshRanks(container) {
+      [...container.children].forEach((el, idx) => {
+        const badge = el.querySelector(".rank-no");
+        if (badge) badge.textContent = idx + 1;
+      });
+    }
+
+    function setupSortable(container) {
+      let dragged = null;
+      container.addEventListener("dragstart", e => {
+        dragged = e.target.closest(".order-item");
+        if (dragged) dragged.classList.add("dragging");
+      });
+      container.addEventListener("dragend", () => {
+        if (dragged) dragged.classList.remove("dragging");
+        dragged = null;
+        refreshRanks(container);
+      });
+      container.addEventListener("dragover", e => {
+        e.preventDefault();
+        const after = getDragAfterElement(container, e.clientY);
+        const current = container.querySelector(".dragging");
+        if (!current) return;
+        if (after == null) container.appendChild(current);
+        else container.insertBefore(current, after);
+      });
+
+      let touchEl = null;
+      let startY = 0;
+      container.addEventListener("pointerdown", e => {
+        const target = e.target.closest(".order-item");
+        if (!target || e.pointerType === "mouse") return;
+        touchEl = target;
+        startY = e.clientY;
+        target.setPointerCapture(e.pointerId);
+        target.classList.add("dragging");
+      });
+      container.addEventListener("pointermove", e => {
+        if (!touchEl) return;
+        e.preventDefault();
+        const dy = e.clientY - startY;
+        if (Math.abs(dy) < 18) return;
+        const sibling = dy > 0 ? touchEl.nextElementSibling : touchEl.previousElementSibling;
+        if (sibling && sibling.classList.contains("order-item")) {
+          if (dy > 0) container.insertBefore(sibling, touchEl);
+          else container.insertBefore(touchEl, sibling);
+          startY = e.clientY;
+          refreshRanks(container);
+        }
+      });
+      container.addEventListener("pointerup", () => {
+        if (touchEl) touchEl.classList.remove("dragging");
+        touchEl = null;
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const els = [...container.querySelectorAll(".order-item:not(.dragging)")];
+      return els.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) return { offset, element: child };
+        return closest;
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function submitOrder(timedOut) {
+      if (state.orderAnswered) return;
+      state.orderAnswered = true;
+      clearInterval(state.timer);
+      const container = $("answerArea");
+      const current = [...container.querySelectorAll(".order-item")].map(el => el.dataset.value);
+      const isCorrect = !timedOut && current.every((v, i) => v === orderChallenge.correct[i]);
+      state.orderCorrect = isCorrect;
+      if (isCorrect) {
+        state.correct++;
+        state.streak++;
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+        const earned = 1200 + Math.max(0, state.timeLeft) * 20;
+        state.score += earned;
+        beep(840, .14);
+      } else {
+        state.streak = 0;
+        beep(180, .2);
+      }
+      [...container.querySelectorAll(".order-item")].forEach(el => { el.draggable = false; el.style.cursor = "default"; });
+      const submit = $("submitOrderBtn");
+      if (submit) submit.disabled = true;
+      const fb = $("feedback");
+      fb.className = `feedback show ${isCorrect ? "good" : "bad"}`;
+      fb.innerHTML = isCorrect
+        ? `<strong>Xuất sắc! Thứ tự hoàn toàn chính xác.</strong>${orderChallenge.explain}`
+        : `<strong>${timedOut ? "Hết thời gian!" : "Thứ tự chưa chính xác."}</strong>${orderChallenge.explain}`;
+      state.answers.push({ q: orderChallenge.q, selected: current.join(" → "), correct: orderChallenge.correct.join(" → "), isCorrect, explain: orderChallenge.explain });
+      updateHUD();
+      $("nextBtn").textContent = "XEM KẾT QUẢ →";
+      $("nextBtn").style.display = "inline-flex";
+    }
+
+    function nextStep() {
+      if (state.index < state.selected.length) {
+        state.index++;
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      clearInterval(state.timer);
+      $("progressBar").style.width = "100%";
+      const total = state.selected.length + 1;
+      const pct = Math.round((state.correct / total) * 100);
+      let rank, icon, message;
+      if (pct >= 92) {
+        rank = "Đại sứ Du lịch Toàn cầu"; icon = "🌟";
+        message = "Khả năng đọc dữ liệu và nhận diện xu hướng của bạn rất xuất sắc. Bạn đã làm chủ gần như toàn bộ bản đồ du lịch thế giới 2024.";
+      } else if (pct >= 77) {
+        rank = "Chuyên gia Hành trình Quốc tế"; icon = "🏆";
+        message = "Bạn nắm vững các khu vực phục hồi, điểm đến dẫn đầu và dòng tiền du lịch. Chỉ còn vài chi tiết để đạt cấp độ cao nhất.";
+      } else if (pct >= 54) {
+        rank = "Nhà thám hiểm Liên lục địa"; icon = "🧭";
+        message = "Bạn đã có nền tảng tốt. Hãy xem lại bảng xếp hạng điểm đến và các mốc phần trăm so với năm 2019 để tăng độ chính xác.";
+      } else {
+        rank = "Tân binh Hộ chiếu Thế giới"; icon = "🎒";
+        message = "Hành trình đầu tiên đã hoàn thành. Phần xem đáp án sẽ giúp bạn hệ thống nhanh các số liệu cốt lõi trước khi chơi lại.";
+      }
+      $("resultIcon").textContent = icon;
+      $("resultHeading").textContent = `${state.player}, bạn đã hạ cánh!`;
+      $("rankTitle").textContent = rank;
+      $("finalScore").textContent = state.score.toLocaleString("vi-VN");
+      $("correctCount").textContent = `${state.correct}/${total}`;
+      $("bestStreak").textContent = state.bestStreak;
+      $("resultMessage").textContent = message;
+      $("reviewPanel").classList.remove("show");
+      $("reviewBtn").textContent = "📚 Xem đáp án";
+      buildReview();
+      saveHighScore();
+      showScreen("resultScreen");
+    }
+
+    function buildReview() {
+      const panel = $("reviewPanel");
+      panel.innerHTML = `<h3>Đáp án và giải thích</h3>` + state.answers.map((a, i) => `
+        <div class="review-item">
+          <h4>${a.isCorrect ? "✅" : "❌"} Câu ${i + 1}: ${a.q}</h4>
+          <p><strong>Bạn chọn:</strong> ${escapeHtml(a.selected)}</p>
+          <p><strong>Đáp án:</strong> ${escapeHtml(a.correct)}</p>
+          <p>${escapeHtml(a.explain)}</p>
+        </div>
+      `).join("");
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+    }
+
+    function resultText() {
+      const total = state.selected.length + 1;
+      const classText = state.classCode ? ` | Lớp: ${state.classCode}` : "";
+      return `KẾT QUẢ MINI GAME DU LỊCH TOÀN CẦU 2025\nNgười chơi: ${state.player}${classText}\nĐiểm: ${state.score.toLocaleString("vi-VN")}\nSố câu đúng: ${state.correct}/${total}\nChuỗi đúng cao nhất: ${state.bestStreak}\nNguồn: UN Tourism, International Tourism Highlights – 2025 Edition.`;
+    }
+
+    async function copyResult() {
+      const text = resultText();
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch(e) {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+      }
+      showToast("Đã sao chép kết quả!");
+    }
+
+    function showToast(text) {
+      const t = $("toast");
+      t.textContent = text;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 1800);
+    }
+
+    function toggleReview() {
+      const panel = $("reviewPanel");
+      const open = panel.classList.toggle("show");
+      $("reviewBtn").textContent = open ? "✕ Đóng đáp án" : "📚 Xem đáp án";
+      if (open) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function saveHighScore() {
+      try {
+        const key = "worldTourismQuestHighScore";
+        const old = Number(localStorage.getItem(key) || 0);
+        if (state.score > old) localStorage.setItem(key, String(state.score));
+      } catch(e) {}
+    }
+
+    $("startBtn").addEventListener("click", startGame);
+    $("playerName").addEventListener("keydown", e => { if (e.key === "Enter") startGame(); });
+    $("nextBtn").addEventListener("click", nextStep);
+    $("copyBtn").addEventListener("click", copyResult);
+    $("reviewBtn").addEventListener("click", toggleReview);
+    $("restartBtn").addEventListener("click", () => {
+      showScreen("startScreen");
+      $("playerName").focus();
+    });
+  </script>
+</body>
+</html>
